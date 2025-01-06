@@ -1,0 +1,77 @@
+services:
+  foxglove_bridge:
+    image: foxglovesros
+    privileged: true
+    build:
+      context: ./foxgloves_ros_humble_Ujammy
+      dockerfile: Dockerfile
+      args:
+        UBUNTU_DISTRO: ${UBUNTU_DISTRO}
+        TZ: ${TZ}
+        ROS_VERSION: ${ROS_VERSION}
+        ROS_DISTRO: ${ROS_DISTRO}
+        ROS_PYTHON_VERSION: ${ROS_PYTHON_VERSION}
+        ROS_FOXGLOVE_PORT: ${ROS_FOXGLOVE_PORT}
+    ports: 
+      - "127.0.0.1:${ROS_FOXGLOVE_PORT}:${ROS_FOXGLOVE_PORT}"
+    command: bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash \
+                    && ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=${ROS_FOXGLOVE_PORT} send_buffer_limit:=100000000"
+  flexiv:
+    image: flexivros
+    privileged: true
+    build:
+      context: ./flexiv_ros_humble_Ujammy
+      dockerfile: Dockerfile
+      args:
+        UBUNTU_DISTRO: ${UBUNTU_DISTRO}
+        TZ: ${TZ}
+        ROS_VERSION: ${ROS_VERSION}
+        ROS_DISTRO: ${ROS_DISTRO}
+        ROS_PYTHON_VERSION: ${ROS_PYTHON_VERSION}
+    command: bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash \
+                    && source ~/flexiv_ros2_ws/install/setup.bash \
+                    && ros2 launch flexiv_bringup rizon.launch.py robot_sn:=dont-care use_fake_hardware:=true start_rviz:=false"
+  control_flexiv:
+    image: flexivros
+    privileged: true
+    build:
+      context: ./flexiv_ros_humble_Ujammy
+      dockerfile: Dockerfile
+      args:
+        UBUNTU_DISTRO: ${UBUNTU_DISTRO}
+        TZ: ${TZ}
+        ROS_VERSION: ${ROS_VERSION}
+        ROS_DISTRO: ${ROS_DISTRO}
+        ROS_PYTHON_VERSION: ${ROS_PYTHON_VERSION}
+    command: bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash \
+                    && source ~/flexiv_ros2_ws/install/setup.bash \
+                    && ros2 launch flexiv_bringup test_joint_trajectory_controller.launch.py"
+  camera:
+    image: realsenseros
+    privileged: true
+    build:
+      context: ./realsense_ros_humble_Ujammy
+      dockerfile: Dockerfile
+      args:
+        UBUNTU_DISTRO: ${UBUNTU_DISTRO}
+        TZ: ${TZ}
+        ROS_VERSION: ${ROS_VERSION}
+        ROS_DISTRO: ${ROS_DISTRO}
+        ROS_PYTHON_VERSION: ${ROS_PYTHON_VERSION}
+        CAMERA_MODEL: ${CAMERA_MODEL}
+    devices:
+      - "/dev:/dev"
+    device_cgroup_rules:
+      - 'c 81:* rmw'
+      - 'c 189:* rmw'
+    command: bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash \
+                    && ros2 run realsense2_camera realsense2_camera_node --ros-args -p enable_color:=true -p enable_sync:=true -p device_type:=d435i -p unite_imu_method:=2 -p accelerate_gpu_with_glsl:=true"
+  # bags:
+  #   image: rosbag
+  #   build:
+  #     context: ./bags_ros_humble_Ujammy
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - ./bags_ros_humble_Ujammy/data:/rosbag/data
+  #   command: bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash \
+  #                   && ros2 bag record -a -d 100 -o /rosbag/data/bagtest"
