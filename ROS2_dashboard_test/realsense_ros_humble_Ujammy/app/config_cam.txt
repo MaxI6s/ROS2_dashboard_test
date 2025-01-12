@@ -1,0 +1,19 @@
+depth_module.depth_profile:=640x480x0 depth_module.infra_profile:=640x480x0 rgb_camera.color_profile:=640x480x15
+
+ros2 launch realsense2_camera rs_launch.py enable_color:=true rgb_camera.color_profile:=320x240x15
+
+ros2 param set camera/camera 
+
+ros2 param set camera/camera depth_module.depth_profile 424x240x6
+ros2 param set camera/camera depth_module.infra_profile 424x240x6
+ros2 param set camera/camera rgb_camera.color_profile 320x240x6
+
+ros2 param describe camera/camera rgb_camera.color_profile
+
+source /opt/ros/humble/setup.bash
+
+ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=11511
+
+ros2 launch realsense2_camera rs_launch.py pointcloud.enable:=false enable_gyro:=true enable_accel:=true
+
+ros2 launch realsense2_camera rs_launch.py enable_rgbd:=true enable_sync:=true align_depth.enable:=true enable_color:=true enable_depth:=true 
